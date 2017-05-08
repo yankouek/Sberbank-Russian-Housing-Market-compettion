@@ -1,0 +1,153 @@
+---
+title: "projet_bank"
+author: "tehe Bommanin"
+date: "6 mai 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+
+
+
+
+recupération des données 
+
+
+```{r}
+library(missForest)
+input_train = read.csv("copie_train.csv",sep=",", na.string = "NA")
+
+
+input_test= read.csv("copie_test.csv",sep=",", na.string = "NA")
+
+
+
+
+x_test=as.matrix(input_test)
+x_train=as.matrix(input_train)
+
+
+
+
+
+#fonction d'imputation aléatoire :
+
+
+write.csv(x_train,file="input_train.csv")
+write.csv(x_test,file="input_test.csv")
+
+x_train=read.csv("input_train.csv",sep=",")
+
+
+
+x_test=read.table(file = "input_test.csv",sep=",",header=T)
+colnames(x_train)[ncol(x_train)]="y"
+  
+imputation <- function (a){ missing <- is.na(a) 
+n.missing <- sum(missing) 
+a.obs <- a[!missing] 
+imputed <- a
+imputed[missing] <- sample (a.obs, n.missing, replace=TRUE) 
+return (imputed) }
+
+#(i in 1:ncol(x_test)){
+  
+#x_train[,i]=imputation(x_train[,i])
+ # x_test[,i]=imputation(x_test[,i])
+  
+#}
+x_train=missForest(x_train,maxiter = 2, ntree = 5)$ximp
+x_test=missForest(x_test,maxiter = 2, ntree = 5)$ximp
+
+
+```
+
+
+
+```{r}
+
+v=rep(0,89)
+for(i in 1:89 ){
+  #v[i]=typeof(x_train[[i]])==typeof(x_test[[i]])
+  x_train[[i]]=as.numeric(x_train[[i]])
+ x_test[[i]]=as.numeric(x_test[[i]])
+}
+
+for(i in 1:89 ){
+  v[i]=typeof(x_train[[i]])==typeof(x_test[[i]])
+}
+
+sum(v)
+```
+
+
+```{r}
+library(randomForest)
+set.seed(123)
+selection=x_train[1:10000,]
+mod1_bis=randomForest(selection$y~. ,
+                     selection[,-c(ncol(selection))],
+                       mtry=, # number of predictors to use for generation of tree 
+                       ntree = 500, # number of trees to create
+                       importance = TRUE)
+
+
+```
+ 
+ 
+```{r}
+
+
+pred=predict(mod1_bis,x_train[20001:30000,-c(ncol(x_train))])
+reel=x_train[20001:30000,ncol(x_train)]
+loss1=sqrt((1/10000)*sum((log(1+pred)-log(1+reel))^2))
+loss1
+
+```
+
+
+
+
+```{r}
+id=read.csv("sample_submission.csv")[,1]
+price_doc=predict(mod1_bis,x_test)
+tab=cbind.data.frame(id,price_doc)
+write.csv(tab,file="caisse.csv")
+
+```
+
+
+```{r}
+library(xgboost)
+
+mod2= xgboost(data = as.matrix(x_train[1:20000,-c(ncol(x_train))]), label = x_train[1:20000,]$y, max.depth = 30, nround = 30,objective = "reg:linear")
+```
+
+
+```{r}
+
+
+pred=predict(mod2,as.matrix(x_train[20001:30000,-c(ncol(x_train))]))
+v=pred[which(pred<0)]
+v
+pred=abs(pred)
+reel=x_train[20001:30000,ncol(x_train)]
+loss2=sqrt((1/10000)*sum((log(1+pred)-log(1+reel))^2))
+loss2
+
+
+```
+
+```{r}
+id=read.csv("sample_submission.csv")[,1]
+price_doc=predict(mod2,as.matrix(x_test))
+tab=cbind.data.frame(id,price_doc)
+write.csv(tab,file="caisse.csv")
+
+```
