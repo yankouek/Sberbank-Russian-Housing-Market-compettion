@@ -36,7 +36,7 @@ x_train=as.matrix(input_train)
 
 
 
-#fonction d'imputation aléatoire :
+
 
 
 write.csv(x_train,file="input_train.csv")
@@ -48,6 +48,11 @@ x_train=read.csv("input_train.csv",sep=",")
 
 x_test=read.table(file = "input_test.csv",sep=",",header=T)
 colnames(x_train)[ncol(x_train)]="y"
+
+  #premier scénario de  traitement des données manquantes (naîf): imputation aléatoire
+  
+  
+  #fonction d'imputation aléatoire :
   
 imputation <- function (a){ missing <- is.na(a) 
 n.missing <- sum(missing) 
@@ -62,6 +67,10 @@ return (imputed) }
  # x_test[,i]=imputation(x_test[,i])
   
 #}
+
+
+#traitement des dobnnées manquantes par arbres de décisions (méthodes cart groupées et pondérées ): random forest prediction :
+
 x_train=missForest(x_train,maxiter = 2, ntree = 5)$ximp
 x_test=missForest(x_test,maxiter = 2, ntree = 5)$ximp
 
@@ -69,7 +78,7 @@ x_test=missForest(x_test,maxiter = 2, ntree = 5)$ximp
 ```
 
 
-
+passage de toutes les variables au type numérique :
 ```{r}
 
 v=rep(0,89)
@@ -86,6 +95,7 @@ for(i in 1:89 ){
 sum(v)
 ```
 
+prédictions des prix des appartements par random Forest :
 
 ```{r}
 library(randomForest)
@@ -100,7 +110,7 @@ mod1_bis=randomForest(selection$y~. ,
 
 ```
  
- 
+ fonction d'écvaluation de la perte : évaluation test set (environ (50-50)
 ```{r}
 
 
@@ -112,7 +122,7 @@ loss1
 ```
 
 
-
+constitution du fichier de soumission 
 
 ```{r}
 id=read.csv("sample_submission.csv")[,1]
@@ -122,6 +132,8 @@ write.csv(tab,file="caisse.csv")
 
 ```
 
+prédiction dui prix des appartements par Gradiant Boosting : boost des fonctions linéaires des prédictions pâr arbre := regression tree + déscente de gradient :
+
 
 ```{r}
 library(xgboost)
@@ -129,7 +141,9 @@ library(xgboost)
 mod2= xgboost(data = as.matrix(x_train[1:20000,-c(ncol(x_train))]), label = x_train[1:20000,]$y, max.depth = 30, nround = 30,objective = "reg:linear")
 ```
 
-
+  fonction d'évaluation de la perte :
+  
+  évaluation test set ( environ 50-50) 
 ```{r}
 
 
@@ -143,6 +157,7 @@ loss2
 
 
 ```
+constitution d'un fichier de soumission :
 
 ```{r}
 id=read.csv("sample_submission.csv")[,1]
