@@ -110,7 +110,7 @@ mod1_bis=randomForest(selection$y~. ,
 
 ```
  
- fonction d'écvaluation de la perte : évaluation test set (environ (50-50)
+ fonction d'évaluation de la perte : évaluation test set (environ (50-50)
 ```{r}
 
 
